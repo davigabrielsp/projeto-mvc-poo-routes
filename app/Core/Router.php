@@ -16,17 +16,36 @@ class Router {
     public function dispatch(string $uri, string $method) {
         $uri = parse_url($uri, PHP_URL_PATH);
 
-        if(!isset($this->routes[$method][$uri])){
+        if(!isset($this->routes[$method])){
             http_response_code(404);
             die("Rota não encontrada");
         }
 
-        [$controller, $action] = explode('@', $this->routes[$method][$uri]);
+        foreach($this->routes[$method] as $route => $action){
+            // id em regex
+            $pattern = preg_replace('#\{[a-zA-Z]+\}#', '([0-9]+)', $route);
+            $pattern = "#^{$pattern}$#";
+            
+            if(preg_match($pattern, $uri, $matches)){
+                array_shift($matches);
+                [$controller, $methodAction] = explode('@', $action);
 
-        $controller = "App\\Controllers\\{$controller}";
-        $controllerInstance = new $controller;
+                $controller = "App\\Controllers\\{$controller}";
+                $controllerInstance = new $controller;
 
-        call_user_func([$controllerInstance]);
+                if(!method_exists($controllerInstance, $methodAction)){
+                    die("Método {$methodAction} não existe");
+                }
+
+                return call_user_func_array(
+                    [$controllerInstance, $methodAction],
+                    $matches
+                );
+            }
+        }
+
+        http_response_code(404);
+        die('rota não encontrada');
         
     }
 }

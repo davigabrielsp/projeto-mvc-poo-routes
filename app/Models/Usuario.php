@@ -6,9 +6,9 @@ use PDO;
 
 class Usuario {
     private ?int $id = null;
-    private string $nome;
-    private string $email;
-    private string $imagem;
+    private string $nome = '';
+    private string $email = '';
+    private string $imagem = '';
     private PDO $conn;
     private string $table = "usuarios";
 
@@ -41,7 +41,7 @@ class Usuario {
     }
 
     public function all(){
-        $stmt = $this->conn->query("SELECT * FROM {$this->table} ORDER BY DESC");
+        $stmt = $this->conn->query("SELECT * FROM {$this->table} ORDER BY id DESC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -66,6 +66,8 @@ class Usuario {
     }
 
     public function update(int $id):bool {
+
+        if($this->imagem){
         $stmt = $this->conn->prepare(
             "UPDATE {$this->table}
             SET nome =:nome, email=:email, imagem=:imagem WHERE id=:id"
@@ -75,7 +77,16 @@ class Usuario {
         $stmt->bindParam(":email", $this->email);
         $stmt->bindParam(":imagem", $this->imagem);
         $stmt->bindParam(":id", $id);
+        }else{
+               $stmt = $this->conn->prepare(
+            "UPDATE {$this->table}
+            SET nome =:nome, email=:email WHERE id=:id"
+        );
 
+        $stmt->bindParam(":nome", $this->nome);
+        $stmt->bindParam(":email", $this->email);
+        $stmt->bindParam(":id", $id);
+        }
         return $stmt->execute();
     }
 
